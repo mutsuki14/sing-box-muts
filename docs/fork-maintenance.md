@@ -31,6 +31,7 @@
 |---|---|---|
 | `constant/v2ray.go` | xhttp | 追加独立 const 块：`V2RayTransportTypeXHTTP = "xhttp"` |
 | `transport/v2ray/transport.go` | xhttp | `NewClientTransport` 的 `default:` 分支内调用 `newXHTTPClientTransport` 钩子 |
+| `option/v2ray_transport.go` | xhttp | `_V2RayTransportOptions` 追加 `XHTTPOptions` 字段；Marshal/Unmarshal 各一个 `case xhttp` 调 tag 对钩子（MUTS-9） |
 | `option/vless.go` | vless-enc | `VLESSOutboundOptions` 追加 `Encryption string` 字段（MUTS-10） |
 | `protocol/vless/outbound.go` | vless-enc | import 一行、`Outbound.encryption` 字段、`NewOutbound` 调 `initVLESSEncryption`、`DialContext`/`ListenPacket` 各一次 `wrapEncryption` 调用（MUTS-10） |
 

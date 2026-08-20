@@ -15,6 +15,13 @@ type _V2RayTransportOptions struct {
 	QUICOptions        V2RayQUICOptions        `json:"-"`
 	GRPCOptions        V2RayGRPCOptions        `json:"-"`
 	HTTPUpgradeOptions V2RayHTTPUpgradeOptions `json:"-"`
+	// fork-patch: begin xhttp
+	// XHTTPOptions holds the decoded "xhttp" transport section (MUTS-9). The
+	// type exists in both build flavors (full schema under with_xhttp, empty
+	// placeholder without); whether an "xhttp" section is actually accepted is
+	// decided by the tag-paired hooks below, never by this field.
+	XHTTPOptions V2RayXHTTPOptions `json:"-"`
+	// fork-patch: end xhttp
 }
 
 type V2RayTransportOptions _V2RayTransportOptions
@@ -32,6 +39,16 @@ func (o V2RayTransportOptions) MarshalJSON() ([]byte, error) {
 		v = o.GRPCOptions
 	case C.V2RayTransportTypeHTTPUpgrade:
 		v = o.HTTPUpgradeOptions
+	// fork-patch: begin xhttp
+	case C.V2RayTransportTypeXHTTP:
+		// Tag-paired hook: with_xhttp exposes the decoded options; without the
+		// tag it returns the exact upstream unknown-type error.
+		marshalValue, marshalErr := xhttpMarshalOptions(o)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+		v = marshalValue
+	// fork-patch: end xhttp
 	case "":
 		return nil, E.New("missing transport type")
 	default:
@@ -57,6 +74,17 @@ func (o *V2RayTransportOptions) UnmarshalJSON(bytes []byte) error {
 		v = &o.GRPCOptions
 	case C.V2RayTransportTypeHTTPUpgrade:
 		v = &o.HTTPUpgradeOptions
+	// fork-patch: begin xhttp
+	case C.V2RayTransportTypeXHTTP:
+		// Tag-paired hook: with_xhttp returns the decode target; without the
+		// tag it returns the exact upstream unknown-type error, so tag-off
+		// parsing stays byte-identical to upstream.
+		target, targetErr := xhttpUnmarshalTarget(o)
+		if targetErr != nil {
+			return targetErr
+		}
+		v = target
+	// fork-patch: end xhttp
 	default:
 		return E.New("unknown transport type: " + o.Type)
 	}

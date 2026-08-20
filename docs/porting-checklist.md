@@ -12,28 +12,35 @@
 
 按依赖顺序排列；每条标注归属与触及的代码文件。
 
-| # | commit | 日期 | 内容 | 触及代码文件 |
-|---|---|---|---|---|
-| 1 | `e111f800` | 06-09 | 客户端 transport registry（`registry.go`） | `transport/v2ray/registry.go`（新增，64 行） |
-| 2 | `2d97ff56` | 06-09 | registry 接入 `NewClientTransport` + xhttp 常量 | `transport/v2ray/transport.go`、`constant/v2ray.go` |
-| 3 | `d1b434fc` | 06-09 | **核心**：lean-native XHTTP 客户端传输 | `transport/v2rayxhttp/{client,conn,register}.go`（新增包）、`option/v2ray_transport.go`（切口）、`option/v2ray_xhttp.go`（新增）、`include/v2rayxhttp.go` |
-| 4 | `7bec034e` | 06-09 | sessionId 对齐 dashed UUID；padding 位置考证 | `transport/v2rayxhttp/client.go` |
-| 5 | `5a398a5e` | 06-09 | padding 位置修复（x_padding 进 Referer）+ auto→packet-up，**已对真实 Xray 服务端活体验证** | `transport/v2rayxhttp/client.go` |
-| 6 | `f2654e6a` | 06-21 | stream-one 下行修复（裸 path、无 sessionId）+ REALITY 下 auto→stream-one | `transport/v2rayxhttp/{client,conn,reality_detect}.go` |
-| 7 | `4df8cf19` | 06-21 | 测试 + auto-reality 检查配置（SPEC 011） | `transport/v2rayxhttp/{reality_detect_test,url_test}.go` |
-| 8 | `33ee291b` | 06-29 | **SPEC 002 v2**：扩展 XHTTP 参数全量客户端支持（placement/obfs/tokenish padding） | `transport/v2rayxhttp/{client,conn,meta,xpadding}.go` + 2 测试文件、`option/v2ray_xhttp.go` |
-| 9 | `75274679` | 06-30 | 接受 legacy 参数 `sc_max_concurrent_posts`（忽略不报错） | `option/v2ray_xhttp.go` |
-| 10 | `c0bbb1c5` | 07-01 | `uplink_http_method=GET` 在非 packet-up 下软回退 POST | `transport/v2rayxhttp/meta.go` + 测试 |
-| 11 | `844ae936` | 07-02 | 移除 streamConn.Read 的竞态快路径（SPEC 022 #7） | `transport/v2rayxhttp/conn.go` |
-| 12 | `3f0cfd87` | 07-20 | 保留 XHTTP path 尾部斜杠（修反向代理 301） | `transport/v2rayxhttp/{client,meta}.go` + 测试 |
-| 13 | `497f0fc0` | 08-01 | streamed-body 请求发送 `Content-Type: application/grpc`（SPEC 042） | `transport/v2rayxhttp/{client,conn}.go`、`option/v2ray_xhttp.go` + 测试 |
-| 14 | `165c091a` | 08-01 | stream-one path 保留尾部斜杠（SPEC 043） | `transport/v2rayxhttp/meta.go` + 测试 |
-| 15 | `ead09967` | 08-11 | **dial 死锁修复**：packet-up/stream-up 不再等待 download 响应（SPEC 061） | `transport/v2rayxhttp/conn.go` + `dial_deadlock_test.go` |
-| 16 | `e3b7ff4a` | 08-11 | **XMUX**：HTTP 连接复用（SPEC 059） | `transport/v2rayxhttp/{client,conn,meta,xmux}.go` + 3 测试文件、`option/v2ray_xhttp.go`、`option/v2ray_xhttp_xmux_range.go` + 测试 |
+| # | commit | 日期 | 内容 | 触及代码文件 | 状态 |
+|---|---|---|---|---|---|
+| 1 | `e111f800` | 06-09 | 客户端 transport registry（`registry.go`） | `transport/v2ray/registry.go`（新增，64 行） | ✅ 已适配（不照搬 registry，用骨架既有的 `xhttp.go`/`xhttp_stub.go` 钩子 tag 对等价接入，见落地说明） |
+| 2 | `2d97ff56` | 06-09 | registry 接入 `NewClientTransport` + xhttp 常量 | `transport/v2ray/transport.go`、`constant/v2ray.go` | ✅ 已适配（骨架已含 `default:` 分支切口与常量，本 issue 仅把钩子 stub 替换为真实构造调用） |
+| 3 | `d1b434fc` | 06-09 | **核心**：lean-native XHTTP 客户端传输 | `transport/v2rayxhttp/{client,conn,register}.go`（新增包）、`option/v2ray_transport.go`（切口）、`option/v2ray_xhttp.go`（新增）、`include/v2rayxhttp.go` | ✅ 已移植（`register.go`/`include/v2rayxhttp.go` 由钩子模式取代，不移植；其余按内容搬入并加 `with_xhttp` tag） |
+| 4 | `7bec034e` | 06-09 | sessionId 对齐 dashed UUID；padding 位置考证 | `transport/v2rayxhttp/client.go` | ✅ 已移植 |
+| 5 | `5a398a5e` | 06-09 | padding 位置修复（x_padding 进 Referer）+ auto→packet-up，**已对真实 Xray 服务端活体验证** | `transport/v2rayxhttp/client.go` | ✅ 已移植 |
+| 6 | `f2654e6a` | 06-21 | stream-one 下行修复（裸 path、无 sessionId）+ REALITY 下 auto→stream-one | `transport/v2rayxhttp/{client,conn,reality_detect}.go` | ✅ 已移植 |
+| 7 | `4df8cf19` | 06-21 | 测试 + auto-reality 检查配置（SPEC 011） | `transport/v2rayxhttp/{reality_detect_test,url_test}.go` | ✅ 已移植 |
+| 8 | `33ee291b` | 06-29 | **SPEC 002 v2**：扩展 XHTTP 参数全量客户端支持（placement/obfs/tokenish padding） | `transport/v2rayxhttp/{client,conn,meta,xpadding}.go` + 2 测试文件、`option/v2ray_xhttp.go` | ✅ 已移植 |
+| 9 | `75274679` | 06-30 | 接受 legacy 参数 `sc_max_concurrent_posts`（忽略不报错） | `option/v2ray_xhttp.go` | ✅ 已移植 |
+| 10 | `c0bbb1c5` | 07-01 | `uplink_http_method=GET` 在非 packet-up 下软回退 POST | `transport/v2rayxhttp/meta.go` + 测试 | ✅ 已移植 |
+| 11 | `844ae936` | 07-02 | 移除 streamConn.Read 的竞态快路径（SPEC 022 #7） | `transport/v2rayxhttp/conn.go` | ✅ 已移植 |
+| 12 | `3f0cfd87` | 07-20 | 保留 XHTTP path 尾部斜杠（修反向代理 301） | `transport/v2rayxhttp/{client,meta}.go` + 测试 | ✅ 已移植 |
+| 13 | `497f0fc0` | 08-01 | streamed-body 请求发送 `Content-Type: application/grpc`（SPEC 042） | `transport/v2rayxhttp/{client,conn}.go`、`option/v2ray_xhttp.go` + 测试 | ✅ 已移植 |
+| 14 | `165c091a` | 08-01 | stream-one path 保留尾部斜杠（SPEC 043） | `transport/v2rayxhttp/meta.go` + 测试 | ✅ 已移植 |
+| 15 | `ead09967` | 08-11 | **dial 死锁修复**：packet-up/stream-up 不再等待 download 响应（SPEC 061） | `transport/v2rayxhttp/conn.go` + `dial_deadlock_test.go` | ✅ 已移植 |
+| 16 | `e3b7ff4a` | 08-11 | **XMUX**：HTTP 连接复用（SPEC 059） | `transport/v2rayxhttp/{client,conn,meta,xmux}.go` + 3 测试文件、`option/v2ray_xhttp.go`、`option/v2ray_xhttp_xmux_range.go` + 测试 | ✅ 已移植 |
 
 **与本骨架的对接说明**：lx 的 #1/#2 用 registry 重构了 `transport/v2ray/transport.go`；本骨架已用更小的 `default:` 分支钩子（`transport/v2ray/xhttp.go` / `xhttp_stub.go` tag 对）实现等价隔离。**移植时不要把 registry.go 照搬进来**——用真实实现替换 `xhttp.go` stub 的报错体即可；`constant/v2ray.go` 的常量已就位。
 
 可忽略commit（docs 批次顺带触及代码，仅注释/路径级改动）：`09944c01`、`022d9135`（P3 卫生审计，`option/v2ray_xhttp.go` 与 `transport/v2rayxhttp/{client,meta}.go` 的注释清理）、`089d8f40`（SPECS 路径改名，代码文件每文件 1–2 行注释引用更新）。
+
+**MUTS-9 落地说明**（2026-08-20）：
+
+- 文件落位：新包 `transport/v2rayxhttp/`（`client` / `conn` / `meta` / `xpadding` / `xmux` / `reality_detect` + 7 个测试文件）与 `option/v2ray_xhttp{,_xmux_range}.go` 全部置于 `with_xhttp` tag 后；lx 仅 `register.go` 带 tag，本 fork 按红线整包隔离。lx 的 `register.go` / `include/v2rayxhttp.go` 不移植——骨架既有 `transport/v2ray/xhttp.go` / `xhttp_stub.go` 钩子 tag 对承担等价注册职责，本 issue 把钩子体从"未移植报错"替换为真实构造调用。
+- option 层 gating：`option/v2ray_transport.go` 的字段与两个 switch case 均在 fork-patch 标记内，case 体调用 tag 对钩子（`option/v2ray_xhttp.go` / `v2ray_xhttp_stub.go`）。tag 关闭时解码路径逐字节复现上游 `unknown transport type: xhttp` 错误（fork-test 负例断言），tag 开启时 schema 生效。
+- **对 Xray 最新稳定版（v26.7.28）逐字段核对结论**：sessionId（dashed UUID、stream-one 为空）、mode auto 解析（Reality→stream-one，否则 packet-up）、padding 默认（非 obfs 走 Referer 头 `x_padding` 查询参数，100-1000）、streamed-body 的 `Content-Type: application/grpc`、sc_* 默认值、uplink key 默认值（X-Data / x_data）、placement/key 默认值（X-Session / X-Seq / x_session / x_seq）、xmux 互斥约束——全部一致，无需纠正。
+- 两处与 v26.3.27 相比的 Xray 侧演进，lx 实现天然对齐：a) `GetNormalizedPath` 尾部斜杠改为仅在 session/seq 有 path placement 时追加——正是 lx `barePathForStreamOne` 的条件；b) xmux 空配置的默认从 `maxConcurrency=1-1` 改为 `maxConnections=3-3`——**本 fork 保留 lx/sing-box-extended 的 `maxConcurrency=1-1` 默认**：纯客户端连接池策略，服务端按 sessionId 路由、无 wire 影响，且 lx 默认已经真机验证；差异在此记录备查。
 
 ## 2. VLESS-ENC（MUTS-10，build tag `with_vless_enc`）
 
