@@ -63,6 +63,15 @@ func NewClientTransport(ctx context.Context, dialer N.Dialer, serverAddr M.Socks
 	case C.V2RayTransportTypeHTTPUpgrade:
 		return v2rayhttpupgrade.NewClient(ctx, dialer, serverAddr, options.HTTPUpgradeOptions, tlsConfig)
 	default:
+		// fork-patch: begin xhttp
+		// Fork transports dispatch here before the unknown-type error. The
+		// hook lives in the xhttp.go/xhttp_stub.go build-tag pair: without
+		// `with_xhttp` it reports "not handled" and this branch behaves
+		// exactly like upstream.
+		if transport, handled, err := newXHTTPClientTransport(ctx, dialer, serverAddr, options, tlsConfig); handled {
+			return transport, err
+		}
+		// fork-patch: end xhttp
 		return nil, E.New("unknown transport type: " + options.Type)
 	}
 }

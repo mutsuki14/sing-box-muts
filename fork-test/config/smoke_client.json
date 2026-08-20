@@ -1,0 +1,39 @@
+{
+  "log": { "level": "warn" },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "in-mixed",
+      "listen": "127.0.0.1",
+      "listen_port": 18080
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "via-ws",
+      "server": "127.0.0.1",
+      "server_port": 18101,
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "transport": { "type": "ws", "path": "/ws" }
+    },
+    {
+      "type": "vless",
+      "tag": "via-grpc",
+      "server": "127.0.0.1",
+      "server_port": 18102,
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "transport": { "type": "grpc", "service_name": "smoke" }
+    },
+    {
+      "type": "vless",
+      "tag": "via-httpupgrade",
+      "server": "127.0.0.1",
+      "server_port": 18103,
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "transport": { "type": "httpupgrade", "path": "/hu" }
+    },
+    { "type": "direct", "tag": "out" }
+  ],
+  "route": { "final": "via-ws" }
+}
