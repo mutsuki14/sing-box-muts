@@ -2,19 +2,20 @@
 
 package encryption
 
-import (
-	"context"
-	"net"
-
-	E "github.com/sagernet/sing/common/exceptions"
-)
-
-// Stub installation: the tag is on, so the feature must fail loudly rather
-// than silently pass traffic unencrypted. The real mlkem768x25519plus
-// handshake replaces this in MUTS-10 (ported from sing-box-lx
-// protocol/vless/encryption).
+// Real installation (MUTS-10): parse the spec string and initialize the
+// mlkem768x25519plus client layer ported from sing-box-lx. A malformed spec
+// fails here, at config time, with an error naming the offending segment —
+// never later as a silent handshake failure.
 func init() {
-	Layer = func(ctx context.Context, conn net.Conn) (net.Conn, error) {
-		return nil, E.New("vless encryption: feature not ported yet (built with `with_vless_enc`; see FORK.md, tracked in MUTS-10)")
+	NewInstance = func(spec string) (Instance, error) {
+		config, err := parseClientEncryption(spec)
+		if err != nil {
+			return nil, err
+		}
+		instance := &ClientInstance{}
+		if err := instance.Init(config.keys, config.xorMode, config.seconds, config.padding); err != nil {
+			return nil, err
+		}
+		return instance, nil
 	}
 }

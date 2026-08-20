@@ -31,8 +31,10 @@
 |---|---|---|
 | `constant/v2ray.go` | xhttp | 追加独立 const 块：`V2RayTransportTypeXHTTP = "xhttp"` |
 | `transport/v2ray/transport.go` | xhttp | `NewClientTransport` 的 `default:` 分支内调用 `newXHTTPClientTransport` 钩子 |
+| `option/vless.go` | vless-enc | `VLESSOutboundOptions` 追加 `Encryption string` 字段（MUTS-10） |
+| `protocol/vless/outbound.go` | vless-enc | import 一行、`Outbound.encryption` 字段、`NewOutbound` 调 `initVLESSEncryption`、`DialContext`/`ListenPacket` 各一次 `wrapEncryption` 调用（MUTS-10） |
 
-VLESS ENC 当前**零上游文件切口**：钩子 `encryption.Layer` 定义在 fork 自有包 `protocol/vless/encryption/` 中，MUTS-10 落地时才在 `protocol/vless/outbound.go` 增加标记切口。
+VLESS ENC 的实现本体在 fork 自有包 `protocol/vless/encryption/` 与 `protocol/vless/vless_enc{,_stub}.go` tag 对中，全部置于 `with_vless_enc` 之后；tag 关闭时 `initVLESSEncryption` 拒绝非空 `encryption` 配置，`wrapEncryption` 为直通。
 
 ### 1.4 build tag 隔离
 

@@ -35,9 +35,9 @@ GPL-3.0，与上游 sing-box、sing-box-lx 一致。fork 新增文件沿用 GPL-
 | tag | 特性 | 落地 issue | 接入点 |
 |---|---|---|---|
 | `with_xhttp` | XHTTP 客户端传输 | MUTS-9 | `constant/v2ray.go`（常量）+ `transport/v2ray/transport.go`（分发切口）+ `transport/v2ray/xhttp.go` / `xhttp_stub.go`（tag 对） |
-| `with_vless_enc` | VLESS 协议层加密（outbound `encryption`） | MUTS-10 | `protocol/vless/encryption/`（`Layer` 钩子，tag 对安装） |
+| `with_vless_enc` | VLESS 协议层加密（outbound `encryption`） | MUTS-10 | `protocol/vless/encryption/`（`NewInstance func(spec string) (Instance, error)` 钩子，tag 对安装）+ `protocol/vless/vless_enc.go` / `vless_enc_stub.go`（outbound 接线 tag 对） |
 
-当前两个 tag 均为**骨架 stub**：编译通过；由于 option schema 尚未落地，引用 `xhttp` transport 或 vless `encryption` 字段的配置目前在**解码层**即被上游错误拒绝（`unknown transport type: xhttp` / `json: unknown field "encryption"`），与上游行为逐字节一致、无静默降级；MUTS-9 / MUTS-10 补齐 schema 后，stub 的 "feature not ported yet" 显式报错才可达。特性代码在 MUTS-9 / MUTS-10 移植。tag 全关时二进制行为与上游同基座 tag 等价。
+`with_xhttp` 仍为**骨架 stub**：编译通过；由于 option schema 尚未落地，引用 `xhttp` transport 的配置目前在**解码层**即被上游错误拒绝（`unknown transport type: xhttp`），与上游行为逐字节一致、无静默降级；MUTS-9 补齐 schema 后，stub 的 "feature not ported yet" 显式报错才可达。`with_vless_enc` 已由 MUTS-10 落地：tag 开时 `encryption` 配置正常生效，tag 关时该配置在 outbound 构造期显式报错（不静默降级为明文），`encryption: none` 或缺省则与上游行为一致。tag 全关时二进制行为与上游同基座 tag 等价。
 
 ## 构建
 
