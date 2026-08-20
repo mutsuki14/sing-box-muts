@@ -117,8 +117,12 @@ func h2cClient(t *testing.T, addr, mode string) *Client {
 // proxy returns 504. The dial must hand the conn up immediately so the first
 // Write can unblock the download.
 func TestDialDoesNotBlockOnDownloadResponse(t *testing.T) {
+	t.Parallel()
+
 	for _, mode := range []string{modePacketUp, modeStreamUp} {
 		t.Run(mode, func(t *testing.T) {
+			t.Parallel()
+
 			server := newXrayLikeServer(t)
 			client := h2cClient(t, server.addr, mode)
 

@@ -24,6 +24,8 @@ type KTLSClientConfig struct {
 }
 
 func TestTypeIsReality(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		name string
 		in   any
@@ -38,6 +40,8 @@ func TestTypeIsReality(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			if got := typeIsReality(tc.in, 0); got != tc.want {
 				t.Fatalf("typeIsReality(%s) = %v, want %v", tc.name, got, tc.want)
 			}

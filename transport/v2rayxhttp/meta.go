@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sagernet/sing-box/log"
-
 	E "github.com/sagernet/sing/common/exceptions"
 )
 
@@ -177,10 +177,8 @@ func orDefault(v, def string) string {
 }
 
 func validatePlacement(field, value string, allowed ...string) error {
-	for _, a := range allowed {
-		if value == a {
-			return nil
-		}
+	if slices.Contains(allowed, value) {
+		return nil
 	}
 	return E.New("v2ray-xhttp: unsupported ", field, ": ", value)
 }

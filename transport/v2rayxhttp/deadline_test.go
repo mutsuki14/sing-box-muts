@@ -91,6 +91,8 @@ func writeAsync(conn interface{ Write([]byte) (int, error) }) <-chan writeResult
 // working SetWriteDeadline a Write into the upload pipe of a half-alive node
 // never returns, and the goroutine holding it outlives the whole box.
 func TestStreamOneWriteDeadlineUnblocksWrite(t *testing.T) {
+	t.Parallel()
+
 	client, transport := hangingClient(t)
 	defer transport.Close()
 
@@ -123,6 +125,8 @@ func TestStreamOneWriteDeadlineUnblocksWrite(t *testing.T) {
 // takes: the encryption handshake runs on a bare net.Conn with no context, so
 // cancelling the dial context is what has to free a pending Write.
 func TestStreamOneDialCancelUnblocksWrite(t *testing.T) {
+	t.Parallel()
+
 	client, transport := hangingClient(t)
 	defer transport.Close()
 
@@ -172,6 +176,8 @@ func (t *liveTransport) RoundTrip(request *http.Request) (*http.Response, error)
 // caller's dial is over), and it must not tear the connection down. A watcher
 // that outlived `created` would break every live stream-one connection.
 func TestStreamOneCancelAfterStreamUpKeepsConnAlive(t *testing.T) {
+	t.Parallel()
+
 	bodyReader, bodyWriter := io.Pipe()
 	defer bodyWriter.Close()
 
@@ -215,6 +221,8 @@ func TestStreamOneCancelAfterStreamUpKeepsConnAlive(t *testing.T) {
 // TestStreamOneDeadlineDoesNotBreakLiveConn guards R4: once the stream is up the
 // dial context is done, and that must not disturb a working connection.
 func TestStreamOneDeadlineDoesNotBreakLiveConn(t *testing.T) {
+	t.Parallel()
+
 	pipeReader, pipeWriter := io.Pipe()
 	conn := newStreamConn(pipeReader, pipeWriter, M.ParseSocksaddr("example.com:443"), nil)
 	if err := conn.SetWriteDeadline(time.Time{}); err != nil {

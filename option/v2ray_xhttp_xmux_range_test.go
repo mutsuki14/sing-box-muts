@@ -15,6 +15,8 @@ import (
 // them as "min-max" strings. A config that uses either spelling must load, and
 // must mean the same thing.
 func TestXmuxRangeUnmarshal(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		input    string
@@ -30,6 +32,8 @@ func TestXmuxRangeUnmarshal(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			var value XmuxRange
 			if err := json.Unmarshal([]byte(testCase.input), &value); err != nil {
 				t.Fatalf("unmarshal %s: %v", testCase.input, err)
@@ -42,6 +46,8 @@ func TestXmuxRangeUnmarshal(t *testing.T) {
 }
 
 func TestXmuxRangeUnmarshalRejects(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name  string
 		input string
@@ -52,6 +58,8 @@ func TestXmuxRangeUnmarshalRejects(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			var value XmuxRange
 			if err := json.Unmarshal([]byte(testCase.input), &value); err == nil {
 				t.Fatalf("unmarshal %s succeeded, want an error", testCase.input)
@@ -63,6 +71,8 @@ func TestXmuxRangeUnmarshalRejects(t *testing.T) {
 // TestXmuxOptionsRoundTrip: a whole xmux section in the Xray spelling must load,
 // and an unset section must stay absent when the config is written back out.
 func TestXmuxOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	const input = `{"max_concurrency":[2,8],"h_max_request_times":"600-900","h_keep_alive_period":30}`
 	var options V2RayXHTTPXmuxOptions
 	if err := json.Unmarshal([]byte(input), &options); err != nil {

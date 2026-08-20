@@ -48,6 +48,8 @@ func mustRequest(t *testing.T, c *Client, method, sessionID, seqStr string) *htt
 // TestDefaultLegacyPadding locks the v1 on-wire shape: padding lives in the Referer
 // header as an x_padding query param, path carries session/seq, no obfs headers.
 func TestDefaultLegacyPadding(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{100, 100}, metaOptions{})
 	req := mustRequest(t, c, "POST", "sid", "3")
 
@@ -76,7 +78,11 @@ func TestDefaultLegacyPadding(t *testing.T) {
 // --- session / seq placement ---------------------------------------------------
 
 func TestSessionPlacement(t *testing.T) {
+	t.Parallel()
+
 	t.Run("query", func(t *testing.T) {
+		t.Parallel()
+
 		c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{SessionPlacement: "query"})
 		req := mustRequest(t, c, "GET", "sid", "")
 		if got := req.URL.Query().Get("x_session"); got != "sid" {
@@ -87,6 +93,8 @@ func TestSessionPlacement(t *testing.T) {
 		}
 	})
 	t.Run("header custom key", func(t *testing.T) {
+		t.Parallel()
+
 		c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{SessionPlacement: "header", SessionKey: "X-My-Sess"})
 		req := mustRequest(t, c, "GET", "sid", "")
 		if got := req.Header.Get("X-My-Sess"); got != "sid" {
@@ -94,6 +102,8 @@ func TestSessionPlacement(t *testing.T) {
 		}
 	})
 	t.Run("cookie default key", func(t *testing.T) {
+		t.Parallel()
+
 		c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{SessionPlacement: "cookie"})
 		req := mustRequest(t, c, "GET", "sid", "")
 		ck, err := req.Cookie("x_session")
@@ -104,7 +114,11 @@ func TestSessionPlacement(t *testing.T) {
 }
 
 func TestSeqPlacement(t *testing.T) {
+	t.Parallel()
+
 	t.Run("header default key X-Seq", func(t *testing.T) {
+		t.Parallel()
+
 		c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{SeqPlacement: "header"})
 		req := mustRequest(t, c, "POST", "sid", "42")
 		if got := req.Header.Get("X-Seq"); got != "42" {
@@ -116,6 +130,8 @@ func TestSeqPlacement(t *testing.T) {
 		}
 	})
 	t.Run("query default key x_seq", func(t *testing.T) {
+		t.Parallel()
+
 		c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{SeqPlacement: "query"})
 		req := mustRequest(t, c, "POST", "sid", "42")
 		if got := req.URL.Query().Get("x_seq"); got != "42" {
@@ -127,6 +143,8 @@ func TestSeqPlacement(t *testing.T) {
 // --- uplink data placement -----------------------------------------------------
 
 func TestUplinkDataBody(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{}) // default body/auto
 	req := mustRequest(t, c, "POST", "sid", "0")
 	payload := []byte("hello world")
@@ -142,6 +160,8 @@ func TestUplinkDataBody(t *testing.T) {
 }
 
 func TestUplinkDataHeaderChunks(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{
 		UplinkDataPlacement: "header",
 		UplinkChunkSize:     "64-64", // small chunks to force multiple headers
@@ -172,6 +192,8 @@ func TestUplinkDataHeaderChunks(t *testing.T) {
 }
 
 func TestUplinkDataCookieChunks(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{0, 0}, metaOptions{
 		UplinkDataPlacement: "cookie",
 		UplinkChunkSize:     "100-100",
@@ -204,6 +226,8 @@ func TestUplinkDataCookieChunks(t *testing.T) {
 // --- X-Padding obfs placements -------------------------------------------------
 
 func TestXPaddingObfsPlacements(t *testing.T) {
+	t.Parallel()
+
 	const padLen = 120
 	base := func(placement string) *Client {
 		return clientWith(t, modePacketUp, intRange{padLen, padLen}, metaOptions{
@@ -213,6 +237,8 @@ func TestXPaddingObfsPlacements(t *testing.T) {
 	}
 
 	t.Run("header", func(t *testing.T) {
+		t.Parallel()
+
 		req := mustRequest(t, base("header"), "POST", "sid", "0")
 		if got := req.Header.Get("X-Padding"); len(got) != padLen {
 			t.Fatalf("X-Padding len = %d, want %d", len(got), padLen)
@@ -222,6 +248,8 @@ func TestXPaddingObfsPlacements(t *testing.T) {
 		}
 	})
 	t.Run("cookie", func(t *testing.T) {
+		t.Parallel()
+
 		req := mustRequest(t, base("cookie"), "POST", "sid", "0")
 		ck, err := req.Cookie("x_padding")
 		if err != nil || len(ck.Value) != padLen {
@@ -229,12 +257,16 @@ func TestXPaddingObfsPlacements(t *testing.T) {
 		}
 	})
 	t.Run("query", func(t *testing.T) {
+		t.Parallel()
+
 		req := mustRequest(t, base("query"), "POST", "sid", "0")
 		if got := req.URL.Query().Get("x_padding"); len(got) != padLen {
 			t.Fatalf("query x_padding len = %d, want %d", len(got), padLen)
 		}
 	})
 	t.Run("queryInHeader", func(t *testing.T) {
+		t.Parallel()
+
 		req := mustRequest(t, base("queryInHeader"), "POST", "sid", "0")
 		hv := req.Header.Get("X-Padding")
 		if !strings.Contains(hv, "x_padding=") {
@@ -247,6 +279,8 @@ func TestXPaddingObfsPlacements(t *testing.T) {
 }
 
 func TestXPaddingCustomKeyHeader(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{50, 50}, metaOptions{
 		XPaddingObfsMode:  true,
 		XPaddingPlacement: "header",
@@ -261,6 +295,8 @@ func TestXPaddingCustomKeyHeader(t *testing.T) {
 // --- tokenish padding ----------------------------------------------------------
 
 func TestTokenishPaddingHuffmanLength(t *testing.T) {
+	t.Parallel()
+
 	for _, target := range []int{64, 100, 256, 1000} {
 		pad := generateTokenishPaddingBase62(target)
 		// base62-only content (no literal run of identical chars is required, but
@@ -278,6 +314,8 @@ func TestTokenishPaddingHuffmanLength(t *testing.T) {
 }
 
 func TestTokenishUsedWhenConfigured(t *testing.T) {
+	t.Parallel()
+
 	c := clientWith(t, modePacketUp, intRange{200, 200}, metaOptions{
 		XPaddingObfsMode:  true,
 		XPaddingPlacement: "header",
@@ -300,6 +338,8 @@ func TestTokenishUsedWhenConfigured(t *testing.T) {
 // --- validation / mode gates ---------------------------------------------------
 
 func TestValidationRejections(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		name string
 		mode string
@@ -314,6 +354,8 @@ func TestValidationRejections(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			if _, err := normalizeMeta(tc.opts, tc.mode); err == nil {
 				t.Fatalf("expected error for %s, got nil", tc.name)
 			}
@@ -322,6 +364,8 @@ func TestValidationRejections(t *testing.T) {
 }
 
 func TestValidationAccepts(t *testing.T) {
+	t.Parallel()
+
 	// header/cookie uplink and GET method ARE valid in packet-up.
 	if _, err := normalizeMeta(metaOptions{UplinkDataPlacement: "header"}, modePacketUp); err != nil {
 		t.Fatalf("uplink header in packet-up should be valid: %v", err)
@@ -335,6 +379,8 @@ func TestValidationAccepts(t *testing.T) {
 // subscription node that ships method=GET on a non-packet-up node, normalizeMeta
 // falls back to POST (and warns) so the rest of the config still loads. lx: SPEC 002.
 func TestUplinkGetFallsBackToPostOutsidePacketUp(t *testing.T) {
+	t.Parallel()
+
 	for _, mode := range []string{modeAuto, modeStreamUp, modeStreamOne} {
 		m, err := normalizeMeta(metaOptions{UplinkHTTPMethod: "GET"}, mode)
 		if err != nil {
@@ -357,6 +403,8 @@ func TestUplinkGetFallsBackToPostOutsidePacketUp(t *testing.T) {
 // --- uplink method on the wire -------------------------------------------------
 
 func TestUplinkMethodUpperCased(t *testing.T) {
+	t.Parallel()
+
 	m, err := normalizeMeta(metaOptions{UplinkHTTPMethod: "put"}, modePacketUp)
 	if err != nil {
 		t.Fatalf("normalizeMeta: %v", err)
@@ -369,6 +417,8 @@ func TestUplinkMethodUpperCased(t *testing.T) {
 // --- chunk size defaults -------------------------------------------------------
 
 func TestUplinkChunkSizeDefaults(t *testing.T) {
+	t.Parallel()
+
 	cookie, _ := normalizeMeta(metaOptions{UplinkDataPlacement: "cookie"}, modePacketUp)
 	if cookie.uplinkChunkSize != (intRange{2048, 3072}) {
 		t.Fatalf("cookie chunk default = %v, want {2048 3072}", cookie.uplinkChunkSize)
@@ -391,6 +441,8 @@ func TestUplinkChunkSizeDefaults(t *testing.T) {
 // server key unbuffered response streaming on it — without it a stream-one dial
 // hangs until timeout (live-verified 2026-08-01).
 func TestGRPCHeaderOnStreamedBody(t *testing.T) {
+	t.Parallel()
+
 	const grpcContentType = "application/grpc"
 
 	newReq := func(body *strings.Reader) *http.Request {

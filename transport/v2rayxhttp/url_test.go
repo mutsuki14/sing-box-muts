@@ -50,6 +50,8 @@ func newHeaderSessionClient(path string) *Client {
 // implies. stream-up/packet-up keep the sessionId (and seq) path segments, in that
 // order.
 func TestRequestURLPaths(t *testing.T) {
+	t.Parallel()
+
 	c := newPathClient()
 
 	cases := []struct {
@@ -67,6 +69,8 @@ func TestRequestURLPaths(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			req, err := c.newRequest(context.Background(), "GET", tc.sessionID, tc.seqStr, nil)
 			if err != nil {
 				t.Fatalf("newRequest(%q,%q) error: %v", tc.sessionID, tc.seqStr, err)
@@ -86,6 +90,8 @@ func TestRequestURLPaths(t *testing.T) {
 // exception: with the session off the path there is nothing to normalize, so the
 // configured path reaches the wire verbatim there too.
 func TestTrailingSlashPreservedOffPath(t *testing.T) {
+	t.Parallel()
+
 	c := newHeaderSessionClient("/upload/")
 
 	cases := []struct {
@@ -100,6 +106,8 @@ func TestTrailingSlashPreservedOffPath(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			req, err := c.newRequest(context.Background(), "GET", tc.sessionID, tc.seqStr, nil)
 			if err != nil {
 				t.Fatalf("newRequest(%q,%q) error: %v", tc.sessionID, tc.seqStr, err)
@@ -119,6 +127,8 @@ func TestTrailingSlashPreservedOffPath(t *testing.T) {
 // path continues into "/<sessionId>", matched and worked. Reproduced on the wire
 // against a prefix-checking server before the fix.
 func TestStreamOnePathPrefixMatchesServer(t *testing.T) {
+	t.Parallel()
+
 	serverPath := func(configured string) string { // mirrors GetNormalizedPath
 		if !strings.HasSuffix(configured, "/") {
 			return configured + "/"
@@ -128,6 +138,8 @@ func TestStreamOnePathPrefixMatchesServer(t *testing.T) {
 
 	for _, configured := range []string{"/api/v1/feed", "/api/v1/feed/", "/"} {
 		t.Run(configured, func(t *testing.T) {
+			t.Parallel()
+
 			c := newPathClient()
 			c.path = configured
 

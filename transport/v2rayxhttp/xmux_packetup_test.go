@@ -63,6 +63,8 @@ func (r *blockingReader) Read(p []byte) (int, error) {
 }
 
 func TestPacketUpUploadsCountAgainstRequestLimit(t *testing.T) {
+	t.Parallel()
+
 	meta, err := normalizeMeta(metaOptions{
 		ScMinPostsIntervalMs: "0",
 	}, modePacketUp)
@@ -91,7 +93,7 @@ func TestPacketUpUploadsCountAgainstRequestLimit(t *testing.T) {
 	}
 	defer conn.Close()
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if _, err := conn.Write([]byte("payload")); err != nil {
 			t.Fatalf("write %d: %v", i, err)
 		}

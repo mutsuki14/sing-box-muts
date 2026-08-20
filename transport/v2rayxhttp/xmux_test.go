@@ -79,6 +79,8 @@ func poolOf(t *testing.T, config xmuxConfig) (*xmuxManager, func() []*fakeXmuxCo
 // stream must land on the connection the first one already opened. Without this
 // the whole feature is a no-op.
 func TestXmuxReusesConnection(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{4, 4}})
 	first := manager.get()
 	first.addOpenUsage(1)
@@ -94,6 +96,8 @@ func TestXmuxReusesConnection(t *testing.T) {
 // TestXmuxConcurrencyLimit: once a connection carries max_concurrency streams,
 // the next stream needs a new connection.
 func TestXmuxConcurrencyLimit(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{1, 1}})
 	first := manager.get()
 	first.addOpenUsage(1)
@@ -109,6 +113,8 @@ func TestXmuxConcurrencyLimit(t *testing.T) {
 // TestXmuxMaxConnections: while the pool is below max_connections every stream
 // opens a new connection; past that it reuses.
 func TestXmuxMaxConnections(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConnections: intRange{2, 2}})
 	manager.get()
 	manager.get()
@@ -124,6 +130,8 @@ func TestXmuxMaxConnections(t *testing.T) {
 // TestXmuxEviction covers all four retirement causes. Each is checked in
 // isolation: a pool that evicted on the wrong signal would either rotate
 // constantly (churning handshakes) or never (outliving the server's limits).
+//
+//nolint:paralleltest // the "expired" subtest overrides the package-level timeNow clock
 func TestXmuxEviction(t *testing.T) {
 	t.Run("closed", func(t *testing.T) {
 		manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{4, 4}})
@@ -174,6 +182,8 @@ func TestXmuxEviction(t *testing.T) {
 // connection that still carries a stream must not tear it down. The teardown is
 // owed to the last stream that leaves.
 func TestXmuxDeferredClose(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{4, 4}})
 	client := manager.get()
 	client.addOpenUsage(1)
@@ -193,6 +203,8 @@ func TestXmuxDeferredClose(t *testing.T) {
 // read deadline plus the caller's Close, SPECS/TASKS/050). A double release
 // would drive openUsage negative and the connection would never be torn down.
 func TestXmuxReleaseIsIdempotent(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{4, 4}})
 	client := manager.get()
 	client.addOpenUsage(1)
@@ -215,6 +227,8 @@ func TestXmuxReleaseIsIdempotent(t *testing.T) {
 // TestXmuxReleaseNilIsSafe: conns built outside a pool (tests, fixed-transport
 // clients) carry a nil release handle.
 func TestXmuxReleaseNilIsSafe(t *testing.T) {
+	t.Parallel()
+
 	var release *xmuxRelease
 	release.release()
 }
@@ -222,6 +236,8 @@ func TestXmuxReleaseNilIsSafe(t *testing.T) {
 // TestXmuxManagerCloseKeepsLiveStreams: shutting the pool down must not cut
 // streams that are still running, for the same reason eviction must not.
 func TestXmuxManagerCloseKeepsLiveStreams(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{maxConcurrency: intRange{4, 4}})
 	client := manager.get()
 	client.addOpenUsage(1)
@@ -239,6 +255,8 @@ func TestXmuxManagerCloseKeepsLiveStreams(t *testing.T) {
 // TestXmuxEventLog: the debug log stands in for pool metrics (SPEC 059 §8.2), so
 // the transitions worth observing must actually be reported.
 func TestXmuxEventLog(t *testing.T) {
+	t.Parallel()
+
 	manager, conns := poolOf(t, xmuxConfig{
 		maxConcurrency: intRange{4, 4},
 		cMaxReuseTimes: intRange{1, 1},
@@ -281,6 +299,8 @@ func freezeTime(t *testing.T, at time.Time) func() {
 // Xray-compatible defaults — that is what makes a plain config behave like an
 // Xray client (SPEC 059 §3).
 func TestNormalizeXmuxDefaults(t *testing.T) {
+	t.Parallel()
+
 	config, err := normalizeXmux(nil)
 	if err != nil {
 		t.Fatalf("normalizeXmux(nil): %v", err)
@@ -298,6 +318,8 @@ func TestNormalizeXmuxDefaults(t *testing.T) {
 
 // TestNormalizeXmuxMutuallyExclusive pins the reference's validation rule.
 func TestNormalizeXmuxMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+
 	_, err := normalizeXmux(&option.V2RayXHTTPXmuxOptions{
 		MaxConcurrency: "4",
 		MaxConnections: "2",
@@ -310,6 +332,8 @@ func TestNormalizeXmuxMutuallyExclusive(t *testing.T) {
 // TestNormalizeXmuxExplicit checks that an explicit section overrides the
 // defaults rather than merging with them.
 func TestNormalizeXmuxExplicit(t *testing.T) {
+	t.Parallel()
+
 	config, err := normalizeXmux(&option.V2RayXHTTPXmuxOptions{
 		MaxConcurrency:   "2-8",
 		CMaxReuseTimes:   "5",
