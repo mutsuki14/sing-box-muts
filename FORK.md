@@ -37,7 +37,7 @@ GPL-3.0，与上游 sing-box、sing-box-lx 一致。fork 新增文件沿用 GPL-
 | `with_xhttp` | XHTTP 客户端传输 | MUTS-9 | `constant/v2ray.go`（常量）+ `transport/v2ray/transport.go`（分发切口）+ `transport/v2ray/xhttp.go` / `xhttp_stub.go`（tag 对） |
 | `with_vless_enc` | VLESS 协议层加密（outbound `encryption`） | MUTS-10 | `protocol/vless/encryption/`（`Layer` 钩子，tag 对安装） |
 
-当前两个 tag 均为**骨架 stub**：编译通过、配置引用时显式报错 "feature not ported yet"，特性代码在 MUTS-9 / MUTS-10 移植。tag 全关时二进制行为与上游同基座 tag 等价。
+当前两个 tag 均为**骨架 stub**：编译通过；由于 option schema 尚未落地，引用 `xhttp` transport 或 vless `encryption` 字段的配置目前在**解码层**即被上游错误拒绝（`unknown transport type: xhttp` / `json: unknown field "encryption"`），与上游行为逐字节一致、无静默降级；MUTS-9 / MUTS-10 补齐 schema 后，stub 的 "feature not ported yet" 显式报错才可达。特性代码在 MUTS-9 / MUTS-10 移植。tag 全关时二进制行为与上游同基座 tag 等价。
 
 ## 构建
 

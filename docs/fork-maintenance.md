@@ -89,7 +89,7 @@ git push --force-with-lease origin muts-main
 
 - [ ] `git diff v<新基座> --stat` 文件清单可控：上游已有文件仅含 `fork-patch` 标记块内的改动，其余全是 fork 自有新文件。
 - [ ] 构建矩阵全绿：`with_xhttp,with_vless_enc` 全开与全关两种组合 `go build ./...` 通过。
-- [ ] 上游既有检查在全关配置通过：`go vet ./...`、`go test ./...`、golangci-lint（`.golangci.yml` 既有配置）。
+- [ ] 上游既有检查在全关配置通过：`go vet ./...`、`go test ./...`、golangci-lint（`.golangci.yml` 既有配置，版本以 `.github/workflows/fork-ci.yml` 中钉住的为准——当前 v2.12.2；若钉住版本对新基座不再全绿，先确认告警全部落在上游文件，再决定升版或豁免，并把决定记录进本文件）。
 - [ ] 冒烟等价：全关构建 vs 上游同 tag 构建，ws / grpc / httpupgrade 三种传输 loopback 冒烟结果一致。
 - [ ] CI（`.github/workflows/fork-ci.yml`）在 muts-main 上全绿。
 - [ ] FORK.md 基座信息已更新；本文件 1.3 切口清单与实际 `git diff` 一致。
