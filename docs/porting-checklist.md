@@ -37,14 +37,21 @@
 
 ## 2. VLESS-ENC（MUTS-10，build tag `with_vless_enc`）
 
-| # | commit | 日期 | 内容 | 触及代码文件 |
-|---|---|---|---|---|
-| 1 | `57ece01c` | 08-01 | **核心**：mlkem768x25519plus 加密层（SPEC 032），已对 12 个真实节点设备验证 | `protocol/vless/encryption/{client,common,lx_support,xor}.go`（新增包，本 fork 需改为 tag 对）、`protocol/vless/lx_encryption.go`（解析+wrap）、`protocol/vless/lx_encryption_test.go`、`option/vless.go`（+`encryption` 字段）、`protocol/vless/outbound.go`（切口） |
-| 2 | `d1c2f3e2` | 08-05 | `wrapEncryption` 只设 write deadline——read 曾锁死 | `protocol/vless/lx_encryption.go` + `lx_encryption_deadline_test.go` |
+| # | commit | 日期 | 内容 | 触及代码文件 | 状态 |
+|---|---|---|---|---|---|
+| 1 | `57ece01c` | 08-01 | **核心**：mlkem768x25519plus 加密层（SPEC 032），已对 12 个真实节点设备验证 | `protocol/vless/encryption/{client,common,lx_support,xor}.go`（新增包，本 fork 需改为 tag 对）、`protocol/vless/lx_encryption.go`（解析+wrap）、`protocol/vless/lx_encryption_test.go`、`option/vless.go`（+`encryption` 字段）、`protocol/vless/outbound.go`（切口） | ✅ 已移植（见下方落地说明） |
+| 2 | `d1c2f3e2` | 08-05 | `wrapEncryption` 只设 write deadline——read 曾锁死 | `protocol/vless/lx_encryption.go` + `lx_encryption_deadline_test.go` | ✅ 已移植（终态即 write-only，含回归测试） |
 
 **上游 provenance**：lx 的 `protocol/vless/encryption` 自身移植自 `starifly/sing-box`（同 GPL-3.0）；`lx_support.go` 是 lx 为摆脱 starifly 的 `common/xray/{cpuid,crypto}` 依赖写的本地替代。移植时以 lx 版本为准。
 
 **与本骨架的对接说明**：lx 未给 VLESS ENC 设 build tag（常驻代码）；本 fork 要求 `with_vless_enc` 隔离——骨架已在 `protocol/vless/encryption/` 放好 `Layer` 钩子（tag 对安装），MUTS-10 需：a) 把 lx 的加密实现搬进该包并用 stub 替换位；b) 在 `option/vless.go` 加 `encryption` 字段（fork-patch 标记）；c) 在 `protocol/vless/outbound.go` 加标记切口调用 `encryption.Layer`。
+
+**MUTS-10 落地说明**（2026-08-20）：
+
+- 文件落位：实现搬进 `protocol/vless/encryption/`（`client.go` / `common.go` / `xor.go` / `support.go`（原 lx_support.go）/ `parse.go`（原 lx_encryption.go 的解析部分）），全部置于 `with_vless_enc` tag 后；骨架的 `Layer` 钩子重构为 `NewInstance func(spec string) (Instance, error)`（原签名拿不到 per-outbound 配置，无法承载解析后的实例）。`wrapEncryption` 与 `initVLESSEncryption` 落 `protocol/vless/vless_enc.go` / `vless_enc_stub.go` tag 对。
+- 上游文件切口（均有 fork-patch 标记）：`option/vless.go` +`Encryption` 字段；`protocol/vless/outbound.go` 四处（import、struct 字段、NewOutbound 初始化、DialContext/ListenPacket 各一次 wrap 调用）。
+- **对 Xray 最新稳定版（v26.7.28）逐字段核对时发现并纠正一处漂移**：lx/starifly 的 `DecodeHeader` 上限为 17000，Xray 最新稳定版为 16640（RFC 8446 §5.2：16384+256）——本 fork 对齐 16640，否则 0-RTT ticket 过期时服务端随机噪声可能被误读为合法长记录头而挂起读。完整对照表随 PR 描述交付。
+- 边界 commit `4dcbb572` 的 vless 部分（握手带 deadline）以 `d1c2f3e2` 修正后的终态（write-only deadline）并入，不单独移植中间态。
 
 ## 3. 跨特性 / 边界 commit（评审决定归属）
 

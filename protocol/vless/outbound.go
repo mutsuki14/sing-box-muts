@@ -12,6 +12,9 @@ import (
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
+	// fork-patch: begin vless-enc
+	"github.com/sagernet/sing-box/protocol/vless/encryption"
+	// fork-patch: end vless-enc
 	"github.com/sagernet/sing-box/transport/v2ray"
 	"github.com/sagernet/sing-vmess/packetaddr"
 	"github.com/sagernet/sing-vmess/vless"
@@ -41,6 +44,14 @@ type Outbound struct {
 	transport       adapter.V2RayClientTransport
 	packetAddr      bool
 	xudp            bool
+	// fork-patch: begin vless-enc
+	// encryption is the VLESS post-quantum layer (MUTS-10), nil unless
+	// `encryption` is configured. It wraps the dialed conn beneath the vless
+	// client, which is unaware of it. The interface type lives in the
+	// fork-owned encryption package and compiles in every build
+	// configuration; without `with_vless_enc` the field stays nil.
+	encryption encryption.Instance
+	// fork-patch: end vless-enc
 }
 
 func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.VLESSOutboundOptions) (adapter.Outbound, error) {
@@ -88,6 +99,15 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 			return nil, E.New("unknown packet encoding: ", *options.PacketEncoding)
 		}
 	}
+	// fork-patch: begin vless-enc
+	// Set up the post-quantum encryption layer (MUTS-10) before the vless
+	// client, which is unaware of it. The implementation lives in the
+	// fork-owned vless_enc.go/vless_enc_stub.go build-tag pair; without
+	// `with_vless_enc` a configured spec is rejected loudly.
+	if err := initVLESSEncryption(outbound, options.Encryption); err != nil {
+		return nil, err
+	}
+	// fork-patch: end vless-enc
 	outbound.client, err = vless.NewClient(options.UUID, options.Flow, logger)
 	if err != nil {
 		return nil, err
@@ -164,6 +184,14 @@ func (h *vlessDialer) DialContext(ctx context.Context, network string, destinati
 	if err != nil {
 		return nil, err
 	}
+	// fork-patch: begin vless-enc
+	// Wrap the dialed conn with the PQ encryption handshake (no-op when
+	// unconfigured or built without `with_vless_enc`).
+	conn, err = h.wrapEncryption(ctx, conn)
+	if err != nil {
+		return nil, err
+	}
+	// fork-patch: end vless-enc
 	switch N.NetworkName(network) {
 	case N.NetworkTCP:
 		h.logger.InfoContext(ctx, "outbound connection to ", destination)
@@ -207,6 +235,12 @@ func (h *vlessDialer) ListenPacket(ctx context.Context, destination M.Socksaddr)
 		common.Close(conn)
 		return nil, err
 	}
+	// fork-patch: begin vless-enc
+	conn, err = h.wrapEncryption(ctx, conn)
+	if err != nil {
+		return nil, err
+	}
+	// fork-patch: end vless-enc
 	if h.xudp {
 		return h.client.DialEarlyXUDPPacketConn(conn, destination)
 	} else if h.packetAddr {
