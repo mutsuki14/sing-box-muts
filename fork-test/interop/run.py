@@ -54,7 +54,7 @@ def parse_xray_keys(output: str) -> dict[str, str]:
             key, value = line.split(":", 1)
             values[key.strip().lower().replace(" ", "_")] = value.strip()
     private = values.get("privatekey") or values.get("private_key")
-    public = values.get("password_(publickey)") or values.get("publickey") or values.get("public_key")
+    public = values.get("password") or values.get("password_(publickey)") or values.get("publickey") or values.get("public_key")
     if not private or not public:
         raise RuntimeError("xray x25519 output did not contain private/public keys")
     return {"private_key": private, "public_key": public}
@@ -98,7 +98,7 @@ def self_test() -> int:
     assert [x.name for x in required_rows()[2:10]] == [f"xhttp-{m}-{t}" for m in XHTTP_MODES for t in ("tls", "reality")]
     assert required_rows()[0].name == "build-tags-off" and required_rows()[1].name == "build-tags-on"
     assert make_uuid() == make_uuid()
-    assert parse_xray_keys("PrivateKey: a\nPassword (PublicKey): b\n") == {"private_key": "a", "public_key": "b"}
+    assert parse_xray_keys("PrivateKey: a\nPassword: b\n") == {"private_key": "a", "public_key": "b"}
     configs.self_check()
     with tempfile.TemporaryDirectory() as d:
         p = Path(d) / "fixture.bin"
