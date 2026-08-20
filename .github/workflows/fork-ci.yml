@@ -77,7 +77,12 @@ jobs:
           cache: true
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          # Pinned: v2.12.2 is the newest version verified fully green on the
+          # v1.13.19 base (default tags and fork tags, 0 issues). Newer
+          # releases (2.13.x) flag pre-existing upstream code. On each
+          # upstream rebase, re-verify this pin against the new base and bump
+          # deliberately — see docs/fork-maintenance.md §3.3.
+          version: v2.12.2
           args: --timeout=15m ${{ matrix.tags != '' && format('--build-tags {0}', matrix.tags) || '' }}
           install-mode: binary
           verify: false
