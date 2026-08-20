@@ -1,0 +1,15 @@
+{
+  "log": { "level": "warn" },
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "via-xhttp",
+      "server": "127.0.0.1",
+      "server_port": 18109,
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "transport": { "type": "xhttp", "path": "/x" }
+    },
+    { "type": "direct", "tag": "out" }
+  ],
+  "route": { "final": "via-xhttp" }
+}

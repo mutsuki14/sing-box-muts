@@ -1,0 +1,30 @@
+{
+  "log": { "level": "warn" },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "in-ws",
+      "listen": "127.0.0.1",
+      "listen_port": 18101,
+      "users": [ { "uuid": "00000000-0000-4000-8000-000000000001" } ],
+      "transport": { "type": "ws", "path": "/ws" }
+    },
+    {
+      "type": "vless",
+      "tag": "in-grpc",
+      "listen": "127.0.0.1",
+      "listen_port": 18102,
+      "users": [ { "uuid": "00000000-0000-4000-8000-000000000001" } ],
+      "transport": { "type": "grpc", "service_name": "smoke" }
+    },
+    {
+      "type": "vless",
+      "tag": "in-httpupgrade",
+      "listen": "127.0.0.1",
+      "listen_port": 18103,
+      "users": [ { "uuid": "00000000-0000-4000-8000-000000000001" } ],
+      "transport": { "type": "httpupgrade", "path": "/hu" }
+    }
+  ],
+  "outbounds": [ { "type": "direct", "tag": "out" } ]
+}

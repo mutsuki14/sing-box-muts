@@ -1,0 +1,118 @@
+name: fork-ci
+
+# Fork skeleton CI. Build matrix + upstream-equivalence checks.
+# UPSTREAM_BASE must match the 基座 tag recorded in FORK.md;
+# update both in the same commit when rebasing onto a new upstream tag
+# (see docs/fork-maintenance.md §3).
+
+on:
+  push:
+    branches: [muts-main]
+  pull_request:
+    branches: [muts-main]
+
+env:
+  UPSTREAM_BASE: v1.13.19
+  FORK_TAGS: with_xhttp,with_vless_enc
+
+jobs:
+  build-matrix:
+    name: build (${{ matrix.tags == '' && 'tags-off' || 'tags-on' }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tags: ["", "with_xhttp,with_vless_enc"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.12"
+          cache: true
+      - name: go build ./...
+        run: go build -tags "${{ matrix.tags }}" ./...
+      - name: go build ./cmd/sing-box
+        run: go build -trimpath -tags "${{ matrix.tags }}" -o sing-box ./cmd/sing-box
+      - name: sing-box check (smoke configs)
+        run: |
+          ./sing-box check -c fork-test/config/smoke_server.json
+          ./sing-box check -c fork-test/config/smoke_client.json
+      - name: fork feature configs are rejected
+        run: |
+          # Skeleton stage: no option schema yet, so both configs must be
+          # rejected at the option layer in EVERY build configuration
+          # (tag-off: exact upstream behavior; tag-on: same until MUTS-9/10
+          # add the schema, after which the tag-on stub error applies).
+          ! ./sing-box check -c fork-test/config/negative_xhttp.json
+          ! ./sing-box check -c fork-test/config/negative_vless_enc.json
+
+  check-off:
+    name: upstream check (tags off)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.12"
+          cache: true
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test ./...
+
+  lint:
+    name: golangci-lint (${{ matrix.tags == '' && 'default-tags' || 'fork-tags' }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tags: ["", "with_xhttp,with_vless_enc"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.12"
+          cache: true
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --timeout=15m ${{ matrix.tags != '' && format('--build-tags {0}', matrix.tags) || '' }}
+          install-mode: binary
+          verify: false
+
+  diff-hygiene:
+    name: fork-patch marker hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: fetch base tag
+        run: git fetch --depth=1 origin tag "${UPSTREAM_BASE}" --no-tags || git fetch origin tag "${UPSTREAM_BASE}" --no-tags
+      - name: assert upstream files only change inside fork-patch markers
+        run: |
+          set -euo pipefail
+          fail=0
+          echo "== changed files vs ${UPSTREAM_BASE} =="
+          git diff --name-only "${UPSTREAM_BASE}" HEAD | tee changed.txt
+          while IFS= read -r f; do
+            if git cat-file -e "${UPSTREAM_BASE}:${f}" 2>/dev/null; then
+              echo "-- pre-existing upstream file: ${f}"
+              if git diff "${UPSTREAM_BASE}" HEAD -- "${f}" | grep -E '^-[^-]' ; then
+                echo "::error file=${f}::removes upstream lines"
+                fail=1
+              fi
+              if ! git diff "${UPSTREAM_BASE}" HEAD -- "${f}" | awk '
+                /^\+.*fork-patch: begin/ {inside=1; next}
+                /^\+.*fork-patch: end/ {inside=0; next}
+                /^\+[^+]/ && !inside {bad=1; print "unmarked addition: " $0}
+                END {exit bad}
+              '; then
+                echo "::error file=${f}::additions outside fork-patch markers"
+                fail=1
+              fi
+            fi
+          done < changed.txt
+          exit $fail

@@ -1,0 +1,15 @@
+{
+  "log": { "level": "warn" },
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "via-enc",
+      "server": "127.0.0.1",
+      "server_port": 18110,
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "encryption": "mlkem768x25519plus.native.1rtt.example"
+    },
+    { "type": "direct", "tag": "out" }
+  ],
+  "route": { "final": "via-enc" }
+}
