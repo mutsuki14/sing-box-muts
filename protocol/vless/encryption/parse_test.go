@@ -55,7 +55,7 @@ func TestParseClientEncryptionAccepts(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-		t.Parallel()
+			t.Parallel()
 			cfg, err := parseClientEncryption(tc.spec)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -104,7 +104,7 @@ func TestParseClientEncryptionRejects(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-		t.Parallel()
+			t.Parallel()
 			_, err := parseClientEncryption(tc.spec)
 			if err == nil {
 				t.Fatalf("expected an error for %q", tc.spec)
