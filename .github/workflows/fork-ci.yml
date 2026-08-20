@@ -41,12 +41,24 @@ jobs:
           ./sing-box check -c fork-test/config/smoke_client.json
       - name: fork feature configs are rejected
         run: |
-          # Skeleton stage: no option schema yet, so both configs must be
-          # rejected at the option layer in EVERY build configuration
-          # (tag-off: exact upstream behavior; tag-on: same until MUTS-9/10
-          # add the schema, after which the tag-on stub error applies).
-          ! ./sing-box check -c fork-test/config/negative_xhttp.json
+          # negative_vless_enc: no option schema yet (MUTS-10), so it must be
+          # rejected at the option layer in EVERY build configuration.
           ! ./sing-box check -c fork-test/config/negative_vless_enc.json
+      - name: xhttp gating (MUTS-9)
+        run: |
+          if [ -z "${{ matrix.tags }}" ]; then
+            # Tag off: option layer rejects xhttp with the exact upstream
+            # unknown-type error; a full xhttp config must NOT parse.
+            ! ./sing-box check -c fork-test/config/negative_xhttp.json
+            ! ./sing-box check -c fork-test/config/positive_xhttp.json
+          else
+            # Tag on: the schema and transport are live, so a valid xhttp
+            # config parses and checks cleanly.
+            ./sing-box check -c fork-test/config/positive_xhttp.json
+          fi
+      - name: fork feature tests (tags on)
+        if: matrix.tags != ''
+        run: go test -tags "${{ matrix.tags }}" ./transport/v2rayxhttp/ ./option/
 
   check-off:
     name: upstream check (tags off)
